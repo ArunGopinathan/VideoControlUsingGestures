@@ -1,0 +1,15 @@
+D:\Arun\VisualStudioProjects\VLCControlTesting\VLCControlTesting\bin\Debug\VLCControlTesting.exe.config
+D:\Arun\VisualStudioProjects\VLCControlTesting\VLCControlTesting\bin\Debug\VLCControlTesting.exe
+D:\Arun\VisualStudioProjects\VLCControlTesting\VLCControlTesting\bin\Debug\VLCControlTesting.pdb
+D:\Arun\VisualStudioProjects\VLCControlTesting\VLCControlTesting\obj\Debug\VLCControlTesting.csprojResolveAssemblyReference.cache
+D:\Arun\VisualStudioProjects\VLCControlTesting\VLCControlTesting\obj\Debug\Interop.AXVLC.dll
+D:\Arun\VisualStudioProjects\VLCControlTesting\VLCControlTesting\obj\Debug\VLCControlTesting.csproj.ResolveComReference.cache
+D:\Arun\VisualStudioProjects\VLCControlTesting\VLCControlTesting\obj\Debug\MainWindow.baml
+D:\Arun\VisualStudioProjects\VLCControlTesting\VLCControlTesting\obj\Debug\MainWindow.g.cs
+D:\Arun\VisualStudioProjects\VLCControlTesting\VLCControlTesting\obj\Debug\App.g.cs
+D:\Arun\VisualStudioProjects\VLCControlTesting\VLCControlTesting\obj\Debug\VLCControlTesting_MarkupCompile.cache
+D:\Arun\VisualStudioProjects\VLCControlTesting\VLCControlTesting\obj\Debug\VLCControlTesting.g.resources
+D:\Arun\VisualStudioProjects\VLCControlTesting\VLCControlTesting\obj\Debug\VLCControlTesting.Properties.Resources.resources
+D:\Arun\VisualStudioProjects\VLCControlTesting\VLCControlTesting\obj\Debug\VLCControlTesting.csproj.GenerateResource.Cache
+D:\Arun\VisualStudioProjects\VLCControlTesting\VLCControlTesting\obj\Debug\VLCControlTesting.exe
+D:\Arun\VisualStudioProjects\VLCControlTesting\VLCControlTesting\obj\Debug\VLCControlTesting.pdb
