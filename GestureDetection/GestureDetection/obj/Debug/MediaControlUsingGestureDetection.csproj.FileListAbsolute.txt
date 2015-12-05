@@ -16,8 +16,6 @@ D:\Arun\VisualStudioProjects\VLCControlTesting\VLCControlTesting\obj\Debug\Gestu
 D:\Arun\VisualStudioProjects\VLCControlTesting\VLCControlTesting\bin\Debug\Microsoft.Kinect.dll
 D:\Arun\VisualStudioProjects\VLCControlTesting\VLCControlTesting\bin\Debug\Microsoft.Kinect.xml
 D:\Arun\VisualStudioProjects\GestureDetection\GestureDetection\bin\Debug\GestureDetection.exe.config
-D:\Arun\VisualStudioProjects\GestureDetection\GestureDetection\obj\Debug\Interop.AXVLC.dll
-D:\Arun\VisualStudioProjects\GestureDetection\GestureDetection\obj\Debug\MediaControlUsingGestureDetection.csproj.ResolveComReference.cache
 D:\Arun\VisualStudioProjects\GestureDetection\GestureDetection\obj\Debug\GestureDetection.exe
 D:\Arun\VisualStudioProjects\GestureDetection\GestureDetection\obj\Debug\GestureDetection.pdb
 D:\Arun\VisualStudioProjects\GestureDetection\GestureDetection\bin\Debug\GestureDetection.exe
@@ -32,3 +30,5 @@ D:\Arun\VisualStudioProjects\GestureDetection\GestureDetection\obj\Debug\Gesture
 D:\Arun\VisualStudioProjects\GestureDetection\GestureDetection\obj\Debug\GestureDetection.g.resources
 D:\Arun\VisualStudioProjects\GestureDetection\GestureDetection\obj\Debug\GestureDetection.Properties.Resources.resources
 D:\Arun\VisualStudioProjects\GestureDetection\GestureDetection\obj\Debug\MediaControlUsingGestureDetection.csproj.GenerateResource.Cache
+D:\Arun\VisualStudioProjects\GestureDetection\GestureDetection\bin\Debug\LightBuzz.Vitruvius.dll
+D:\Arun\VisualStudioProjects\GestureDetection\GestureDetection\bin\Debug\LightBuzz.Vitruvius.xml

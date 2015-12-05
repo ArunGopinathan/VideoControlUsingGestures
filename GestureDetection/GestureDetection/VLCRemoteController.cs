@@ -11,6 +11,7 @@ namespace GestureDetection
 {
     class VLCRemoteController
     {
+        public bool isConnected = false;
         public VLCRemoteController()
         {
             m_client = new TcpClient();
@@ -61,6 +62,7 @@ namespace GestureDetection
                 if (isSocketConnected())
                 {
                     m_networkStream = m_client.GetStream();
+                    isConnected = true;
                 }
             }
             catch
@@ -76,6 +78,7 @@ namespace GestureDetection
          * */
         public void disconnect()
         {
+            isConnected = false;
             if (isSocketConnected())
             {
                 m_client.Close();

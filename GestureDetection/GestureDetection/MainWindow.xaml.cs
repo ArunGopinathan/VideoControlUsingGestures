@@ -19,6 +19,7 @@ using System.Timers;
 #endregion
 #region Kinect Specific Imports
 using Microsoft.Kinect;
+using LightBuzz.Vitruvius;
 #endregion
 namespace GestureDetection
 {
@@ -29,6 +30,9 @@ namespace GestureDetection
     {
         private VLCRemoteController m_vlcControl;
         Timer timer = new Timer(3000);
+        Command prevCommand;
+        Joint Hip_right, Shoulder_right, Elbow_right;
+        int ref_angle;
         #region Members
         Mode _mode = Mode.Color;
         KinectSensor _sensor;
@@ -53,8 +57,10 @@ namespace GestureDetection
             this.Left = desktopWorkingArea.Right - this.Width;
             this.Top = desktopWorkingArea.Bottom - this.Height;
             this.Topmost = true; //always listening.
-           
+            //    command = new Command();
 
+            prevCommand = new Command();
+            prevCommand.CommandType = CommandType.Play;
 
             timer.Elapsed += timer_Elapsed;//event handler for every 3 seconds
             timer.Start();
@@ -63,6 +69,7 @@ namespace GestureDetection
             if (_sensor != null)
             {
                 _sensor.Open();
+
 
                 _reader = _sensor.OpenMultiSourceFrameReader(FrameSourceTypes.Color | FrameSourceTypes.Body); // reading the body and color sensor
                 _reader.MultiSourceFrameArrived += Reader_MultiSourceFrameArrived; // whenever a multi-source frame arrives handle this event
@@ -106,23 +113,48 @@ namespace GestureDetection
             {
                 if (frame != null)
                 {
-                    canvas.Children.Clear();
-                    _bodies = new Body[frame.BodyFrameSource.BodyCount];
-                    frame.GetAndRefreshBodyData(_bodies);
-                    foreach (var body in _bodies)
+                    TimeSpan span = frame.RelativeTime;
+                    if (span.Milliseconds % 60000 == 0) // i think it is relative seconds , 60000 msec is 1 sec. so for every second trying to run
                     {
-                        if (body != null)
+                        canvas.Children.Clear();
+                        _bodies = new Body[frame.BodyFrameSource.BodyCount];
+                        frame.GetAndRefreshBodyData(_bodies);
+                        foreach (var body in _bodies)
                         {
-                            if (body.IsTracked)
+                            if (body != null)
                             {
-                                Command command = detectGestureAndCommand(body); // detect gesture and get the command
-                                if (command.CommandType == CommandType.Play)
-                                    issuePlayCommand(); //issue play command
-                                else if (command.CommandType == CommandType.Pause)
-                                    issuePauseCommand(); //issue pause command
-                                else if (command.CommandType == CommandType.Stop)
-                                    issueStopCommand(); //issue stop comand
+                                if (body.IsTracked)
+                                {
+                                    if (m_vlcControl.isConnected)
+                                    {
+                                        Hip_right = body.Joints[JointType.HipRight];
+                                        Shoulder_right = body.Joints[JointType.ShoulderRight];
+                                        Elbow_right = body.Joints[JointType.ElbowRight];
+                                        ref_angle = (int)Math.Floor(Shoulder_right.Angle(Hip_right, Elbow_right));
 
+                                        Command command = detectGestureAndCommand(body); // detect gesture and get the command
+                                        Message.Content = "ref_angle :" + ref_angle;
+                                        if (ref_angle > 70)
+                                        {
+                                            //  command = currentcommand;
+
+                                            if (command.CommandType == CommandType.Play && prevCommand.CommandType != CommandType.Play)
+                                                lock (command)
+                                                    issuePlayCommand(); //issue play command
+
+                                            else if (command.CommandType == CommandType.Pause && prevCommand.CommandType != CommandType.Pause)
+                                                issuePauseCommand(); //issue pause command
+                                            else if (command.CommandType == CommandType.Stop && prevCommand.CommandType != CommandType.Stop)
+                                                issueStopCommand(); //issue stop comand
+
+                                        }
+                                        if (command.CommandType == CommandType.Volume && prevCommand.CommandType == CommandType.Play)
+                                            issueVolumeCommand(command.Volume + ""); //issue volume command
+
+                                        prevCommand = command;
+
+                                    }
+                                }
                             }
                         }
                     }
@@ -137,24 +169,14 @@ namespace GestureDetection
         {
             //to issue play command to vlc remote interface we need to issue play command and 
             //after we receive reply we need to send pause again to issue actual Play command
-            if (m_vlcControl.sendCustomCommand("play"))
-            {
-                m_vlcControl.reciveAnswer();
-                if (m_vlcControl.sendCustomCommand("pause"))
-                {
-                    //need to say the command in UI
-                    icon.Source = new BitmapImage(new Uri("pack://application:,,,/play106.png"));
-                    Message.Content = "Command: Play";
-                    timer.Start();
-                }
 
-            }
-            else
+            lock (this)
             {
-                icon.Source = new BitmapImage(new Uri("pack://application:,,,/cross97.png"));
-                Message.Content = "Play Command Issue Failure";
-                timer.Start();
+                m_vlcControl.sendCustomCommand("play");
+                m_vlcControl.sendCustomCommand("pause");
             }
+
+
         }
         /// <summary>
         /// //issue pause command to VLC Media Player through RC Interface
@@ -167,13 +189,13 @@ namespace GestureDetection
                 //need to say the command in UI
                 icon.Source = new BitmapImage(new Uri("pack://application:,,,/pause44.png"));
                 Message.Content = "Command: Pause";
-                timer.Start();
+                //   timer.Start();
             }
             else
             {
                 icon.Source = new BitmapImage(new Uri("pack://application:,,,/cross97.png"));
                 Message.Content = "Pause Command Issue Failure";
-                timer.Start();
+                //   timer.Start();
             }
         }
         /// <summary>
@@ -187,15 +209,34 @@ namespace GestureDetection
                 //need to say the command in UI
                 icon.Source = new BitmapImage(new Uri("pack://application:,,,/media26.png"));
                 Message.Content = "Command: Stop";
-                timer.Start();
+                //   timer.Start();
             }
             else
             {
                 icon.Source = new BitmapImage(new Uri("pack://application:,,,/cross97.png"));
                 Message.Content = "Stop Command Issue Failure";
-                timer.Start();
+                //  timer.Start();
             }
         }
+        private void issueVolumeCommand(String volume)
+        {
+            string command_string = "volume " + volume;
+            if (m_vlcControl.sendCustomCommand(command_string))
+            {
+                //need to say the command in UI
+                icon.Source = new BitmapImage(new Uri("pack://application:,,,/media26.png"));
+                Message.Content = "Command: Volume " + volume;
+                //   timer.Start();
+            }
+            else
+            {
+                icon.Source = new BitmapImage(new Uri("pack://application:,,,/cross97.png"));
+                Message.Content = "Volume Command Issue Failure";
+                //  timer.Start();
+            }
+
+        }
+
         /// <summary>
         /// to detect the gesture and get the command
         /// </summary>
@@ -210,10 +251,49 @@ namespace GestureDetection
                 command.CommandType = CommandType.Pause;
             else if (isStopGesture(body)) // check if its a stop command
                 command.CommandType = CommandType.Stop;
+            else if (isVolumeCommand(body))
+            {
+                int volume = getVolumeFromAngle(body);
+                command.CommandType = CommandType.Volume;
+                command.Volume = volume;
+            }
 
 
 
             return command;
+        }
+        private int getVolumeFromAngle(Body body)
+        {
+            int volume = 0;
+            Joint shoulder_left = body.Joints[JointType.ShoulderLeft];
+            Joint elbow_left = body.Joints[JointType.ElbowLeft];
+            Joint wrist_left = body.Joints[JointType.WristLeft];
+            int Angle = (int)Math.Floor(elbow_left.Angle(shoulder_left, wrist_left));
+            if (Angle >= 120)
+                volume = 125;
+            else if (Angle <= 20)
+                volume = 0;
+            else
+            {
+                volume = Angle;
+            }
+            return volume;
+        }
+        private bool isVolumeCommand(Body body)
+        {
+            bool isVolume = false;
+            if (body.HandLeftState == HandState.Lasso)
+            {
+                Joint Hip_left = body.Joints[JointType.HipLeft];
+                Joint Shoulder_left = body.Joints[JointType.ShoulderLeft];
+                Joint Elbow_left = body.Joints[JointType.ElbowLeft];
+                int Angle = (int)Math.Floor(Shoulder_left.Angle(Hip_left, Elbow_left));
+                Message.Content = "E. Angle = " + Angle;
+                if (Angle > 80)
+                    isVolume = true;
+            }
+            //  isVolume = true;
+            return isVolume;
         }
 
         /// <summary>
@@ -225,7 +305,11 @@ namespace GestureDetection
         {
             bool isPlay = false;
             if (body.HandRightState == HandState.Open)
+            {
+
                 isPlay = true;
+
+            }
             return isPlay;
         }
 
@@ -238,7 +322,10 @@ namespace GestureDetection
         {
             bool isStop = false;
             if (body.HandRightState == HandState.Closed)
-                isStop = true;
+            {
+
+            }
+            isStop = true;
             return isStop;
         }
         /// <summary>
@@ -261,7 +348,7 @@ namespace GestureDetection
         /// <param name="e"></param>
         private void btn_Close_Click(object sender, RoutedEventArgs e)
         {
-           // timer.Stop();
+            // timer.Stop();
             timer.Dispose();// dispose the timer
             m_vlcControl.disconnect(); // disconnect from VLC
             Application.Current.Shutdown();//close the application
@@ -282,6 +369,7 @@ namespace GestureDetection
                 Process.Start(startInfo);
                 icon.Source = new BitmapImage(new Uri("pack://application:,,,/check35.png"));
                 Message.Content = "Connection: Successful";
+                m_vlcControl.connect("127.0.0.1", 4444);
                 timer.Start();
             }
             else
@@ -298,19 +386,19 @@ namespace GestureDetection
         /// <param name="e"></param>
         private void btn_ConnectVLC_Click(object sender, RoutedEventArgs e)
         {
-            if (m_vlcControl.connect("127.0.0.1", 4444))
-            {
-                icon.Source = new BitmapImage(new Uri("pack://application:,,,/check35.png"));
-                Message.Content = "Connection: Successful";
-                timer.Start();
-            }
-            else
-            {
-                icon.Source = new BitmapImage(new Uri("pack://application:,,,/cross97.png"));
-                Message.Content = "Connection: Failure";
-                timer.Start();
-            }
-
+            /* if (m_vlcControl.connect("127.0.0.1", 4444))
+             {
+                 icon.Source = new BitmapImage(new Uri("pack://application:,,,/check35.png"));
+                 Message.Content = "Connection: Successful";
+                 timer.Start();
+             }
+             else
+             {
+                 icon.Source = new BitmapImage(new Uri("pack://application:,,,/cross97.png"));
+                 Message.Content = "Connection: Failure";
+                 timer.Start();
+             }
+             */
         }
         /// <summary>
         /// to disconnect from the vlc remote interface
@@ -332,7 +420,7 @@ namespace GestureDetection
         private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             this.DragMove();
-        }       
+        }
 
     }
     public enum Mode

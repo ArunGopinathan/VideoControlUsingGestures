@@ -9,6 +9,13 @@ namespace GestureDetection
     public class Command
     {
         private CommandType commandType;
+        private int volume;
+
+        public int Volume
+        {
+            get { return volume; }
+            set { volume = value; }
+        }
 
         public CommandType CommandType
         {
