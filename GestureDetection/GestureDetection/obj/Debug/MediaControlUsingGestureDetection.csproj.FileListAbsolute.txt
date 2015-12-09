@@ -32,3 +32,5 @@ D:\Arun\VisualStudioProjects\GestureDetection\GestureDetection\obj\Debug\Gesture
 D:\Arun\VisualStudioProjects\GestureDetection\GestureDetection\obj\Debug\MediaControlUsingGestureDetection.csproj.GenerateResource.Cache
 D:\Arun\VisualStudioProjects\GestureDetection\GestureDetection\bin\Debug\LightBuzz.Vitruvius.dll
 D:\Arun\VisualStudioProjects\GestureDetection\GestureDetection\bin\Debug\LightBuzz.Vitruvius.xml
+D:\Arun\VisualStudioProjects\GestureDetection\GestureDetection\bin\Debug\Microsoft.Kinect.Tools.dll
+D:\Arun\VisualStudioProjects\GestureDetection\GestureDetection\bin\Debug\Microsoft.Kinect.Tools.xml

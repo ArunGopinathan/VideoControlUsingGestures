@@ -8,6 +8,6 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("gesture-icon.png")]
+[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("3.png")]
 
 

@@ -10,7 +10,8 @@
     <Grid>
         <Button x:Name="btn_Close" Content="X" HorizontalAlignment="Right"  VerticalAlignment="Top" Width="30"  Click="btn_Close_Click">
         </Button>
-        <Image Name="camera"/>
+        <Image Name="camera">
+        </Image>
         <Canvas Name="canvas" />
         <Grid>
             <StackPanel Orientation="Horizontal" VerticalAlignment="Top" HorizontalAlignment="Left">
@@ -27,6 +28,7 @@
                 <Label Name="gestureMessage" Content=""/>
 
             </StackPanel>
+            <Image HorizontalAlignment="Left" Height="55" Margin="10,46,0,0" VerticalAlignment="Top" Width="60" Name="Counter" RenderTransformOrigin="2.968,1.842"  />
         </Grid>
     </Grid>
 </Window>

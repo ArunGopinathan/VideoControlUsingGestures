@@ -29,10 +29,12 @@ namespace GestureDetection
     public partial class MainWindow : Window
     {
         private VLCRemoteController m_vlcControl;
-        Timer timer = new Timer(3000);
-        Command prevCommand;
-        Joint Hip_right, Shoulder_right, Elbow_right;
-        int ref_angle;
+        Timer timer = new Timer();
+        Command prevCommand, command1, command2, command3;
+        Joint Hip_right, Shoulder_right, Elbow_right, Hip_left, Shoulder_left, Elbow_left;
+        int ref_angle_right, ref_angle_left;
+        int framecount = 0;
+
         #region Members
         Mode _mode = Mode.Color;
         KinectSensor _sensor;
@@ -52,7 +54,9 @@ namespace GestureDetection
         /// <param name="e"></param>
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            //to make the window start always in the bottom left corner
+            timer.Interval = 1000;
+            //   timer.Elapsed += timer_Elapsed;//event handler for every seconds
+            //to make the window start always in the bottom right corner
             var desktopWorkingArea = System.Windows.SystemParameters.WorkArea;
             this.Left = desktopWorkingArea.Right - this.Width;
             this.Top = desktopWorkingArea.Bottom - this.Height;
@@ -62,7 +66,11 @@ namespace GestureDetection
             prevCommand = new Command();
             prevCommand.CommandType = CommandType.Play;
 
-            timer.Elapsed += timer_Elapsed;//event handler for every 3 seconds
+            command1 = new Command();
+            command2 = new Command();
+            command3 = new Command();
+
+
             timer.Start();
             _sensor = KinectSensor.GetDefault();
 
@@ -83,11 +91,40 @@ namespace GestureDetection
             icon.Source = null;
             Message.Content = "";
         }
-        void timer_Elapsed(object sender, EventArgs e)
+        void timer_Elapsed()
         {
-            this.Dispatcher.Invoke(clearMessages);
-            timer.Stop();
+            if (command1.CommandType == CommandType.Pause && command2.CommandType != CommandType.Pause && command3.CommandType != CommandType.Pause)
+            {
+                makeImageDisplay(3);
+            }
+            else if (command1.CommandType == CommandType.Pause && command2.CommandType == CommandType.Pause && command3.CommandType != CommandType.Pause)
+            {
+                makeImageDisplay(2);
+            }
+            else if (command1.CommandType == CommandType.Pause && command2.CommandType == CommandType.Pause && command3.CommandType == CommandType.Pause)
+            {
+                makeImageDisplay(1);
+            }
 
+
+        }
+        Command getCommand()
+        {
+            if (command1.CommandType == command2.CommandType && command2.CommandType == command3.CommandType)
+            {
+                return command1;
+            }
+            else
+            {
+                return null;
+            }
+
+        }
+        void resetCommands()
+        {
+            command1 = null;
+            command2 = null;
+            command3 = null;
         }
         /// <summary>
         /// Event Handler for the MultisourceFrameArrived event of the Kinect
@@ -96,6 +133,11 @@ namespace GestureDetection
         /// <param name="e"></param>
         void Reader_MultiSourceFrameArrived(object sender, MultiSourceFrameArrivedEventArgs e)
         {
+            framecount++;
+            if (framecount % 30 != 0)
+                return;
+
+
             var reference = e.FrameReference.AcquireFrame();
             // Color
             using (var frame = reference.ColorFrameReference.AcquireFrame())
@@ -114,7 +156,8 @@ namespace GestureDetection
                 if (frame != null)
                 {
                     TimeSpan span = frame.RelativeTime;
-                    if (span.Milliseconds % 60000 == 0) // i think it is relative seconds , 60000 msec is 1 sec. so for every second trying to run
+                    //  MessageBox.Show(span.Ticks.ToString());
+                    //  if (span.Ticks % 60000 == 0) // i think it is relative seconds , 60000 msec is 1 sec. so for every second trying to run
                     {
                         canvas.Children.Clear();
                         _bodies = new Body[frame.BodyFrameSource.BodyCount];
@@ -128,30 +171,86 @@ namespace GestureDetection
                                     if (m_vlcControl.isConnected)
                                     {
                                         Hip_right = body.Joints[JointType.HipRight];
+                                        Hip_left = body.Joints[JointType.HipLeft];
+
                                         Shoulder_right = body.Joints[JointType.ShoulderRight];
+                                        Shoulder_left = body.Joints[JointType.ShoulderLeft];
+
                                         Elbow_right = body.Joints[JointType.ElbowRight];
-                                        ref_angle = (int)Math.Floor(Shoulder_right.Angle(Hip_right, Elbow_right));
+                                        Elbow_left = body.Joints[JointType.ElbowLeft];
 
-                                        Command command = detectGestureAndCommand(body); // detect gesture and get the command
-                                        Message.Content = "ref_angle :" + ref_angle;
-                                        if (ref_angle > 70)
+                                        ref_angle_right = (int)Math.Floor(Shoulder_right.Angle(Hip_right, Elbow_right));
+                                        ref_angle_left = (int)Math.Floor(Shoulder_left.Angle(Hip_left, Elbow_left));
+
+                                        Command command = null; // detect gesture and get the command
+                                        icon.Source = null;
+                                        Message.Content = "";
+                                        //   Message.Content = "ref_angle :" + ref_angle;
+                                        if (ref_angle_right > 70)
                                         {
+                                            command = detectGestureAndCommand(body);
+                                            // timer_Elapsed();
+                                            command3 = command2; // moving command 2 to command 3
+                                            command2 = command1; // moving command 1 to command 2;
+                                            command1 = command;
                                             //  command = currentcommand;
+                                            command = getCommand();
+                                            if (command != null)
+                                            {
+                                                if (command.CommandType == CommandType.Play)
+                                                {
+                                                    if (prevCommand.CommandType != CommandType.Play)
+                                                    {
 
-                                            if (command.CommandType == CommandType.Play && prevCommand.CommandType != CommandType.Play)
-                                                lock (command)
-                                                    issuePlayCommand(); //issue play command
+                                                        issuePlayCommand(); //issue play command
+                                                        prevCommand = command;
+                                                    }
 
-                                            else if (command.CommandType == CommandType.Pause && prevCommand.CommandType != CommandType.Pause)
-                                                issuePauseCommand(); //issue pause command
-                                            else if (command.CommandType == CommandType.Stop && prevCommand.CommandType != CommandType.Stop)
-                                                issueStopCommand(); //issue stop comand
+                                                }
+
+                                                else if (command.CommandType == CommandType.Pause)
+                                                {
+                                                    if (prevCommand.CommandType != CommandType.Pause)
+                                                    {
+                                                        issuePauseCommand(); //issue pause command
+                                                        prevCommand = command;
+                                                    }
+
+                                                }
+                                                else if (command.CommandType == CommandType.Stop)
+                                                {
+                                                    if (prevCommand.CommandType != CommandType.Stop)
+                                                    {
+                                                        issueStopCommand(); //issue stop comand
+                                                        prevCommand = command;
+                                                    }
+
+                                                }
+
+                                               // resetCommands();
+                                            }
+
 
                                         }
-                                        if (command.CommandType == CommandType.Volume && prevCommand.CommandType == CommandType.Play)
-                                            issueVolumeCommand(command.Volume + ""); //issue volume command
+                                        else
+                                        {
+                                            // playCommandCount = 0; pauseCommandCount = 0; stopCommandCount = 0;
+                                        }
+                                        if (ref_angle_left > 70)
+                                        {
+                                            command = detectGestureAndCommand(body);
+                                            /*command3 = command2; // moving command 2 to command 3
+                                            command2 = command1; // moving command 1 to command 2;
+                                            command1 = command;
+                                            command = getCommand();*/
+                                            if (command != null)
+                                            {
+                                                if (command.CommandType == CommandType.Volume /*&& prevCommand.CommandType == CommandType.Play*/)
+                                                    issueVolumeCommand(command.Volume + ""); //issue volume command
+                                            }
+                                        }
 
-                                        prevCommand = command;
+
 
                                     }
                                 }
@@ -172,8 +271,25 @@ namespace GestureDetection
 
             lock (this)
             {
-                m_vlcControl.sendCustomCommand("play");
-                m_vlcControl.sendCustomCommand("pause");
+                if (m_vlcControl.sendCustomCommand("play"))
+                {
+                    if (prevCommand.CommandType != CommandType.Stop)
+                    {
+                        m_vlcControl.sendCustomCommand("pause");
+                        icon.Source = new BitmapImage(new Uri("pack://application:,,,/play106.png"));
+                        Message.Content = "Command: Play";
+                    }
+                    else
+                    {
+                        icon.Source = new BitmapImage(new Uri("pack://application:,,,/play106.png"));
+                        Message.Content = "Command: Play";
+                    }
+                }
+                else
+                {
+                    icon.Source = new BitmapImage(new Uri("pack://application:,,,/cross97.png"));
+                    Message.Content = "Play Command Issue Failure";
+                }
             }
 
 
@@ -204,9 +320,29 @@ namespace GestureDetection
         private void issueStopCommand()
         {
             //issue pause command
-            if (m_vlcControl.sendCustomCommand("stop"))
+
+            if(prevCommand.CommandType == CommandType.Pause)
+            {
+                m_vlcControl.sendCustomCommand("play");
+                m_vlcControl.sendCustomCommand("pause");
+                m_vlcControl.sendCustomCommand("stop");
+            }
+            else
+            {
+                 m_vlcControl.sendCustomCommand("stop");
+            }
+            icon.Source = new BitmapImage(new Uri("pack://application:,,,/media26.png"));
+                Message.Content = "Command: Stop";
+
+
+
+          /*  if (m_vlcControl.sendCustomCommand("stop"))
             {
                 //need to say the command in UI
+                if (prevCommand.CommandType == CommandType.Pause)
+                {
+                    m_vlc
+                }
                 icon.Source = new BitmapImage(new Uri("pack://application:,,,/media26.png"));
                 Message.Content = "Command: Stop";
                 //   timer.Start();
@@ -216,16 +352,18 @@ namespace GestureDetection
                 icon.Source = new BitmapImage(new Uri("pack://application:,,,/cross97.png"));
                 Message.Content = "Stop Command Issue Failure";
                 //  timer.Start();
-            }
+            }*/
         }
         private void issueVolumeCommand(String volume)
         {
             string command_string = "volume " + volume;
             if (m_vlcControl.sendCustomCommand(command_string))
             {
+                m_vlcControl.reciveAnswer();
                 //need to say the command in UI
                 icon.Source = new BitmapImage(new Uri("pack://application:,,,/media26.png"));
                 Message.Content = "Command: Volume " + volume;
+              //  Message.Content = m_vlcControl.reciveAnswer(); 
                 //   timer.Start();
             }
             else
@@ -269,14 +407,23 @@ namespace GestureDetection
             Joint elbow_left = body.Joints[JointType.ElbowLeft];
             Joint wrist_left = body.Joints[JointType.WristLeft];
             int Angle = (int)Math.Floor(elbow_left.Angle(shoulder_left, wrist_left));
-            if (Angle >= 120)
-                volume = 125;
-            else if (Angle <= 20)
-                volume = 0;
+            Message.Content = Angle;
+            if (Angle >= 160)
+                volume = 400;
+            else if (Angle <= 60)
+                volume = 1;
             else
             {
-                volume = Angle;
+                if (Angle > 60 && Angle <= 90)
+                    volume = 100;
+                else if (Angle > 90 && Angle <= 120)
+                    volume = 200;
+                else if (Angle > 120 && Angle <= 150)
+                    volume = 300;
+                else
+                    volume = 400;
             }
+           // Message.Content = "Volume :" + volume;
             return volume;
         }
         private bool isVolumeCommand(Body body)
@@ -284,12 +431,7 @@ namespace GestureDetection
             bool isVolume = false;
             if (body.HandLeftState == HandState.Lasso)
             {
-                Joint Hip_left = body.Joints[JointType.HipLeft];
-                Joint Shoulder_left = body.Joints[JointType.ShoulderLeft];
-                Joint Elbow_left = body.Joints[JointType.ElbowLeft];
-                int Angle = (int)Math.Floor(Shoulder_left.Angle(Hip_left, Elbow_left));
-                Message.Content = "E. Angle = " + Angle;
-                if (Angle > 80)
+               
                     isVolume = true;
             }
             //  isVolume = true;
@@ -310,7 +452,28 @@ namespace GestureDetection
                 isPlay = true;
 
             }
+
             return isPlay;
+        }
+
+        private void makeImageDisplay(int count)
+        {
+            Counter.Visibility = System.Windows.Visibility.Visible;
+            Message.Content = count;
+            switch (count)
+            {
+                case 1: Counter.Source = new BitmapImage(new Uri("pack://application:,,,/1.png"));
+                    break;
+                case 2: Counter.Source = new BitmapImage(new Uri("pack://application:,,,/2.png"));
+                    break;
+                case 3: Counter.Source = new BitmapImage(new Uri("pack://application:,,,/3.png"));
+                    break;
+            }
+
+        }
+        private void makeImageHidden()
+        {
+            Counter.Visibility = System.Windows.Visibility.Hidden;
         }
 
         /// <summary>
@@ -324,8 +487,12 @@ namespace GestureDetection
             if (body.HandRightState == HandState.Closed)
             {
 
+
+                isStop = true;
+
+
             }
-            isStop = true;
+
             return isStop;
         }
         /// <summary>
@@ -337,8 +504,12 @@ namespace GestureDetection
         private bool isPauseGesture(Body body)
         {
             bool isPause = false;
+
             if (body.HandRightState == HandState.Lasso)
+            {
+
                 isPause = true;
+            }
             return isPause;
         }
         /// <summary>

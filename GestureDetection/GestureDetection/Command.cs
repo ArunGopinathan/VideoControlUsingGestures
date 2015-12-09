@@ -30,5 +30,6 @@ namespace GestureDetection
         Pause,
         Stop,
         Volume
+        
     }
 }
